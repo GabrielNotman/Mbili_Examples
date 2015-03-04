@@ -22,7 +22,7 @@ void setup()
   gprsbee.init(Serial1, BEECTS, BEEDTR);
   
   //Uncomment the line below to debug the GPRSbee with the serial monitor
-  gprsbee.setDiag(Serial);
+  //gprsbee.setDiag(Serial);
   
   //This is required for the Switched Power method
   gprsbee.setPowerSwitchedOnOff(true);
