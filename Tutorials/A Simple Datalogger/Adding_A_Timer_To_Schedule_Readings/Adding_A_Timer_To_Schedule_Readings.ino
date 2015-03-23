@@ -105,11 +105,11 @@ void setupLogFile()
 
 void setupTimer()
 {
-  //Schedule the reading every second
-  timer.every(READ_DELAY, takeReading);
-
   //Instruct the RTCTimer how to get the current time reading
   timer.setNowCallback(getNow);
+
+  //Schedule the reading every second
+  timer.every(READ_DELAY, takeReading);
 }
 
 void logData(String rec)
