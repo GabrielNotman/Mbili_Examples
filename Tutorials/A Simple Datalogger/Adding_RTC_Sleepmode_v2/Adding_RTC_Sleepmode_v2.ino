@@ -62,9 +62,6 @@ void setup()
   Serial.begin(9600);
   Serial.println("Power up...");
   
-  //Set clock time
-  setClockCompileTime();
-  
   //Initialise sensors
   setupSensors();
     
@@ -94,11 +91,6 @@ void loop()
   
   //Sleep
   systemSleep();  
-}
-
-void setClockCompileTime()
-{
-  rtc.setDateTime(DateTime(__DATE__, __TIME__));
 }
 
 void setupSleep()
