@@ -28,15 +28,16 @@
 #define FILE_NAME "DataLog.txt"
 
 //Data header
-#define DATA_HEADER "TimeDate, TempSHT21, TempBMP, PressureBMP, HumiditySHT21"
+#define DATA_HEADER "TimeDate, TempSHT21, TempBMP, PressureBMP, HumiditySHT21, Voltage"
 
 //Network constants
-#define APN "internet"
+#define APN "internet.wind"
 #define APN_USERNAME ""
 #define APN_PASSWORD ""
 
 //SpeakThings constants
-#define URL "api.thingspeak.com/update"
+//#define URL "api.thingspeak.com/update"
+#define URL "184.106.153.149/update"
 #define WRITE_API_KEY "XXXXXXXXXXXXXXXX" //Change to your channel's key
 
 //Seperators
@@ -49,12 +50,19 @@
 #define LABEL2 "field2"
 #define LABEL3 "field3"
 #define LABEL4 "field4"
+#define LABEL5 "field5"
 
 //TPH BMP sensor
 Sodaq_BMP085 bmp;
 
 //RTC Timer
 RTCTimer timer;
+
+//These constants are used for reading the battery voltage
+#define ADC_AREF 3.3
+#define BATVOLTPIN A6
+#define BATVOLT_R1 4.7
+#define BATVOLT_R2 10
 
 void setup() 
 {
@@ -99,7 +107,7 @@ void setupSleep()
   PcInt::attachInterrupt(RTC_PIN, wakeISR);
 
   //Setup the RTC in interrupt mode
-  rtc.begin();
+  //rtc.begin(); //already initialized in setupSensors()
   
   //Set the sleep mode
   set_sleep_mode(SLEEP_MODE_PWR_DOWN);
@@ -112,6 +120,9 @@ void wakeISR()
 
 void systemSleep()
 {
+  Serial.print("Sleeping in low-power mode for ");
+  Serial.print(SLEEP_PERIOD/60.0);
+  Serial.println(" minutes");
   //This method handles any sensor specific sleep setup
   sensorsSleep();
   
@@ -138,6 +149,8 @@ void systemSleep()
  
   //Enbale ADC
   ADCSRA |= _BV(ADEN);
+  
+  Serial.println("Waking-up");
   
   //This method handles any sensor specific wake setup
   sensorsWake();
@@ -248,12 +261,13 @@ void logData(String rec)
 String createDataRecord()
 {
   //Create a String type data record in csv format
-  //TimeDate, TempSHT21, TempBMP, PressureBMP, HumiditySHT21
+  //TimeDate, TempSHT21, TempBMP, PressureBMP, HumiditySHT21, Voltage
   String data = getDateTime() + ", ";
   data += String(SHT2x.GetTemperature())  + ", ";
   data += String(bmp.readTemperature()) + ", ";
   data += String(bmp.readPressure() / 100)  + ", ";
-  data += String(SHT2x.GetHumidity());
+  data += String(SHT2x.GetHumidity()) + ", ";
+  data += String(getRealBatteryVoltage() * 1000);
   
   return data;
 }
@@ -278,6 +292,9 @@ String createDataURL()
   
   url += String(OTHER_SEP) + String(LABEL4);
   url += String(LABEL_DATA_SEP) + String(SHT2x.GetHumidity());
+  
+  url += String(OTHER_SEP) + String(LABEL5);
+  url += String(LABEL_DATA_SEP) + String(getRealBatteryVoltage() * 1000);
 
   return url;  
 }
@@ -306,4 +323,11 @@ String getDateTime()
 uint32_t getNow()
 {
   return rtc.now().getEpoch();
+}
+
+
+float getRealBatteryVoltage()
+{
+  uint16_t batteryVoltage = analogRead(BATVOLTPIN);
+  return (ADC_AREF / 1023.0) * (BATVOLT_R1 + BATVOLT_R2) / BATVOLT_R2 * batteryVoltage;
 }
